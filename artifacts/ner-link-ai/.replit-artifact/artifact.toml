@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "NER-LINK AI"
+description = "A logistics accessibility intelligence dashboard for monitoring road risk, essential-goods vehicles, incidents, weather signals, and safer route decisions across North Eastern India."
+version = "1.0.0"
+id = "artifacts/ner-link-ai"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19165
+
+[services.development]
+run = "pnpm --filter @workspace/ner-link-ai run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ner-link-ai", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/ner-link-ai/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19165"
+BASE_PATH = "/"

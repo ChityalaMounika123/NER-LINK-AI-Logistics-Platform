@@ -3,13 +3,27 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NER-LINK AI logistics accessibility intelligence API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Operational overview and recent activity
+  - name: vehicles
+    description: Essential-goods vehicle tracking
+  - name: incidents
+    description: Field-reported accessibility incidents
+  - name: routes
+    description: Risk-aware route recommendations
+  - name: weather
+    description: Weather signals and provider status
+  - name: alerts
+    description: Logistics alerts
+  - name: reports
+    description: Operational reports
 paths:
   /healthz:
     get:
@@ -24,7 +38,211 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get operational dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Get recent operational activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+  /vehicles:
+    get:
+      operationId: listVehicles
+      tags: [vehicles]
+      summary: List tracked logistics vehicles
+      parameters:
+        - $ref: "#/components/parameters/StatusQuery"
+      responses:
+        "200":
+          description: Tracked vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Vehicle"
+    post:
+      operationId: createVehicle
+      tags: [vehicles]
+      summary: Register a logistics vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleInput"
+      responses:
+        "201":
+          description: Vehicle created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+  /vehicles/{vehicleId}/status:
+    patch:
+      operationId: updateVehicleStatus
+      tags: [vehicles]
+      summary: Update vehicle operating status
+      parameters:
+        - $ref: "#/components/parameters/VehicleId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleStatusUpdate"
+      responses:
+        "200":
+          description: Updated vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Vehicle"
+  /incidents:
+    get:
+      operationId: listIncidents
+      tags: [incidents]
+      summary: List field incidents
+      parameters:
+        - $ref: "#/components/parameters/SeverityQuery"
+      responses:
+        "200":
+          description: Field incidents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Incident"
+    post:
+      operationId: createIncident
+      tags: [incidents]
+      summary: Submit a field incident
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IncidentInput"
+      responses:
+        "201":
+          description: Incident submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Incident"
+  /routes/recommendations:
+    get:
+      operationId: getRouteRecommendations
+      tags: [routes]
+      summary: Get priority-aware route recommendations
+      parameters:
+        - name: origin
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: destination
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: cargoPriority
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [critical, essential, standard]
+      responses:
+        "200":
+          description: Route recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RouteRecommendation"
+  /weather:
+    get:
+      operationId: getWeatherSignals
+      tags: [weather]
+      summary: Get regional weather signals
+      responses:
+        "200":
+          description: Weather signals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WeatherSignal"
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: List active logistics alerts
+      responses:
+        "200":
+          description: Active alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alert"
+  /reports/weekly:
+    get:
+      operationId: getWeeklyReport
+      tags: [reports]
+      summary: Get weekly accessibility report
+      responses:
+        "200":
+          description: Weekly report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyReport"
 components:
+  parameters:
+    VehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      schema:
+        type: string
+    StatusQuery:
+      name: status
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [moving, delayed, idle, offline]
+    SeverityQuery:
+      name: severity
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [critical, high, medium, low]
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +251,249 @@ components:
           type: string
       required:
         - status
+    DataSource:
+      type: object
+      properties:
+        kind:
+          type: string
+          enum: [LIVE, PUBLIC, GOVERNMENT, FIELD, SIMULATED]
+        label:
+          type: string
+        updatedAt:
+          type: string
+      required: [kind, label, updatedAt]
+    DashboardSummary:
+      type: object
+      properties:
+        activeVehicles:
+          type: integer
+        vehiclesMoving:
+          type: integer
+        criticalIncidents:
+          type: integer
+        roadsAtRisk:
+          type: integer
+        deliveriesOnTime:
+          type: number
+        disruptionIndex:
+          type: number
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [activeVehicles, vehiclesMoving, criticalIncidents, roadsAtRisk, deliveriesOnTime, disruptionIndex, source]
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [incident, vehicle, alert, route, weather]
+        title:
+          type: string
+        detail:
+          type: string
+        timestamp:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low, info]
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [id, type, title, detail, timestamp, severity, source]
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+        registration:
+          type: string
+        driver:
+          type: string
+        cargo:
+          type: string
+        cargoPriority:
+          type: string
+          enum: [critical, essential, standard]
+        route:
+          type: string
+        status:
+          type: string
+          enum: [moving, delayed, idle, offline]
+        eta:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        riskScore:
+          type: number
+        lastSeen:
+          type: string
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [id, registration, driver, cargo, cargoPriority, route, status, eta, lat, lng, riskScore, lastSeen, source]
+    VehicleInput:
+      type: object
+      properties:
+        registration:
+          type: string
+        driver:
+          type: string
+        cargo:
+          type: string
+        cargoPriority:
+          type: string
+          enum: [critical, essential, standard]
+        route:
+          type: string
+      required: [registration, driver, cargo, cargoPriority, route]
+    VehicleStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [moving, delayed, idle, offline]
+      required: [status]
+    Incident:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+          enum: [landslide, flood, road_damage, bridge, traffic, weather]
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        location:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        reportedBy:
+          type: string
+        reportedAt:
+          type: string
+        status:
+          type: string
+          enum: [open, verifying, resolved]
+        description:
+          type: string
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [id, title, type, severity, location, lat, lng, reportedBy, reportedAt, status, description, source]
+    IncidentInput:
+      type: object
+      properties:
+        title:
+          type: string
+        type:
+          type: string
+          enum: [landslide, flood, road_damage, bridge, traffic, weather]
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        location:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        description:
+          type: string
+      required: [title, type, severity, location, lat, lng, description]
+    RouteRecommendation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        via:
+          type: string
+        distanceKm:
+          type: number
+        durationMinutes:
+          type: integer
+        riskScore:
+          type: number
+        riskLabel:
+          type: string
+          enum: [low, moderate, high, critical]
+        priorityFit:
+          type: number
+        reason:
+          type: string
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [id, name, via, distanceKm, durationMinutes, riskScore, riskLabel, priorityFit, reason, source]
+    WeatherSignal:
+      type: object
+      properties:
+        region:
+          type: string
+        condition:
+          type: string
+        rainfallMm:
+          type: number
+        riskLevel:
+          type: string
+          enum: [low, moderate, high, severe]
+        forecast:
+          type: string
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [region, condition, rainfallMm, riskLevel, forecast, source]
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        detail:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        area:
+          type: string
+        timestamp:
+          type: string
+        acknowledged:
+          type: boolean
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [id, title, detail, severity, area, timestamp, acknowledged, source]
+    WeeklyReport:
+      type: object
+      properties:
+        weekLabel:
+          type: string
+        averageDisruptionIndex:
+          type: number
+        incidentCount:
+          type: integer
+        deliveriesCompleted:
+          type: integer
+        highRiskHours:
+          type: integer
+        trend:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              index:
+                type: number
+              incidents:
+                type: integer
+            required: [day, index, incidents]
+        source:
+          $ref: "#/components/schemas/DataSource"
+      required: [weekLabel, averageDisruptionIndex, incidentCount, deliveriesCompleted, highRiskHours, trend, source]
 

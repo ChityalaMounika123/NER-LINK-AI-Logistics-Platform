@@ -1,6 +1,6 @@
-# [Project name]
+# NER-LINK AI
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+NER-LINK AI is a logistics accessibility intelligence console for monitoring essential-goods movement, field incidents, weather risk, and safer route decisions across North Eastern India.
 
 ## Run & Operate
 
@@ -22,23 +22,36 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/ner-link-ai` — React/Vite web app with the public entry page, Clerk-ready auth routes, protected operations shell, dashboard, vehicles, incidents, route desk, reports, and settings.
+- `artifacts/api-server` — Express API with dashboard, vehicle, incident, route, weather, alert, and report endpoints under `/api`.
+- `lib/api-spec/openapi.yaml` — source of truth for the API contract; generated hooks and Zod schemas live in the shared API libraries.
+- `lib/db/src/schema/index.ts` — Drizzle schema for vehicle and incident persistence foundations.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Use Clerk as the authentication boundary; the browser uses Clerk's cookie-based session transport rather than local password/JWT code.
+- Keep external weather, routing, government, and telemetry providers behind typed response shapes. Until a provider is connected, responses are clearly labelled `SIMULATED`, `FIELD`, or `GOVERNMENT` rather than being presented as live.
+- Keep the OpenAPI contract ahead of the React surface so generated client hooks and server-side Zod validation stay aligned.
+- Store geospatial points as latitude/longitude fields in the first schema slice; the model is ready to evolve to PostGIS geometry when road-segment ingestion is added.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+- Public welcome surface explaining the decision-support mission.
+- Authenticated command center with operational metrics, recent activity, active alerts, weather watch, and delivery readiness.
+- Vehicle tracking with status filters, registration, cargo priority, and status updates.
+- Field incident register with severity filters and incident submission.
+- Route desk with priority-aware risk recommendations.
+- Weekly accessibility report and source-layer settings.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+The user wants a production-style Smart India Hackathon prototype, not a disconnected mockup; simulated data must be explicitly labelled.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- API changes start in `lib/api-spec/openapi.yaml`; rerun `pnpm --filter @workspace/api-spec run codegen` before using changed generated types.
+- The web app uses the root preview path and the API is proxied at `/api`; do not hardcode localhost URLs in browser code.
+- Artifact workflows provide `PORT` and `BASE_PATH`; use the managed workflow restart rather than launching artifact dev commands manually.
 
 ## Pointers
 
